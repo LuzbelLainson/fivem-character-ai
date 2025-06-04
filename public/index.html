@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FiveM Karakter AI Dönüşüm</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  label, select, input { display: block; margin: 10px 0; }
+  #output { white-space: pre-wrap; background: #eee; padding: 10px; margin-top: 20px; }
+</style>
+</head>
+<body>
+<h1>FiveM Karakter AI Dönüşüm</h1>
+
+<label for="photo">Gerçek Fotoğraf Yükle:</label>
+<input type="file" id="photo" accept="image/*" />
+
+<label for="script">Karakter Oluşturma Scripti Seç:</label>
+<select id="script">
+  <option value="fivem-appearance">fivem-appearance</option>
+  <option value="fivem-appearance-2">fivem-appearance-2</option>
+  <option value="fivem-appearance-3">fivem-appearance-3</option>
+</select>
+
+<label for="mix">Anne/Baba Genetik Oranı (% Anne): <span id="mix-val">50</span>%</label>
+<input type="range" id="mix" min="0" max="100" value="50" />
+
+<button onclick="generateCharacter()">Karakter Verisini Oluştur</button>
+
+<div id="output"></div>
+
+<script>
+  const mixInput = document.getElementById("mix");
+  const mixVal = document.getElementById("mix-val");
+  mixInput.addEventListener("input", () => {
+    mixVal.textContent = mixInput.value;
+  });
+
+  async function generateCharacter() {
+    const script = document.getElementById('script').value;
+    const mix = document.getElementById('mix').value / 100;
+    const photoFile = document.getElementById('photo').files[0];
+
+    if (!photoFile) {
+      alert("Lütfen önce gerçek bir fotoğraf yükleyin!");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      const photoBase64 = e.target.result;
+
+      document.getElementById('output').textContent = "AI dönüşümü yapılıyor, lütfen bekleyin...";
+
+      try {
+        const response = await fetch("/api/convert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ photoBase64, script, mix }),
+        });
+
+        const result = await response.json();
+
+        if (result.error) {
+          document.getElementById('output').textContent = "Hata: " + result.error;
+          return;
+        }
+
+        document.getElementById('output').textContent = JSON.stringify(result, null, 2);
+
+      } catch (err) {
+        document.getElementById('output').textContent = "Sunucu veya ağ hatası: " + err.message;
+      }
+    };
+    reader.readAsDataURL(photoFile);
+  }
+</script>
+</body>
+</html>
